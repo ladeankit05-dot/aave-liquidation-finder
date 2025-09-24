@@ -1,0 +1,28 @@
+name: Run Aave Liquidation Finder
+
+on:
+  schedule:
+    - cron: '0 2 * * *' # Runs every day at 2am UTC
+  workflow_dispatch:
+
+jobs:
+  run-liquidation-finder:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: npm install
+      - name: Run script
+        env:
+          DEBANK_API_KEY: ${{ secrets.DEBANK_API_KEY }}
+        run: node export_liquidatable_aave_polygon.js
+      - name: Upload CSV output
+        uses: actions/upload-artifact@v4
+        with:
+          name: liquidatable_addresses_polygon
+          path: liquidatable_addresses_polygon.csv

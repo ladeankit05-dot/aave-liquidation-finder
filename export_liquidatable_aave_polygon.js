@@ -11,16 +11,17 @@ const OUTPUT_CSV = "liquidatable_addresses_polygon.csv";
 const DEBANK_API = "https://openapi.debank.com/v1/user/protocol_list";
 const PROTOCOL_ID = "aave_v3_polygon";
 
+// Load DeBank API key from environment variable
+const DEBANK_API_KEY = process.env.DEBANK_API_KEY;
+if (!DEBANK_API_KEY) {
+  console.warn("Warning: DEBANK_API_KEY environment variable not set. API requests may fail.");
+}
+
+const { fetchAaveV3PolygonAddresses } = require('./aave_subgraph');
+
 async function fetchAavePolygonUsers() {
-  // You need a list of addresses to check. In real life, you would get this from a DeBank portfolio scan or other source.
-  // For demo, let's use a small set of addresses (replace with real ones for production)
-  const addresses = [
-    // Sample real Aave v3 Polygon user addresses (publicly available)
-    "0x8f5c1e7e7a4e2e2e7e7e7e7e7e7e7e7e7e7e7e7e", // Replace with more for production
-    "0x7d2c6b2a9405a2a7b2e6e7a6a2c7a7b2e6e7a6a2", // Example pool address
-    "0x1c5b760f133220855340003b43cc9113ec494823", // Real user address
-    "0x2f8c1e7e7a4e2e2e7e7e7e7e7e7e7e7e7e7e7e7e", // Real user address
-  ];
+  // Fetch addresses from Aave v3 Polygon subgraph
+  const addresses = await fetchAaveV3PolygonAddresses();
   let users = [];
   for (const addr of addresses) {
     try {
@@ -28,6 +29,7 @@ async function fetchAavePolygonUsers() {
         params: {
           id: addr,
         },
+        headers: DEBANK_API_KEY ? { 'Authorization': `Bearer ${DEBANK_API_KEY}` } : {},
       });
       const protocols = resp.data || [];
       const aave = protocols.find((p) => p.id === PROTOCOL_ID);
