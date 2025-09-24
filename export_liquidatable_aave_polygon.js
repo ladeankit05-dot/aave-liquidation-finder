@@ -21,7 +21,36 @@ const { fetchAaveV3PolygonAddresses } = require('./aave_subgraph');
 
 async function fetchAavePolygonUsers() {
   // Fetch addresses from Aave v3 Polygon subgraph
-  const addresses = await fetchAaveV3PolygonAddresses();
+  let addresses = await fetchAaveV3PolygonAddresses();
+
+  // Address validation: only keep valid, checksummed Ethereum addresses
+  addresses = addresses.filter(addr => {
+    try {
+      // Exclude zero address, system addresses, and short addresses
+      if (
+        !addr ||
+        addr.toLowerCase() === '0x0000000000000000000000000000000000000000' ||
+        addr.length !== 42 ||
+        /^0x0+$/.test(addr)
+      ) return false;
+      ethers.utils.getAddress(addr); // Throws if invalid
+      return true;
+    } catch {
+      return false;
+    }
+  });
+
+  // Log a sample of addresses for review
+  console.log('Sample of valid addresses:', addresses.slice(0, 10));
+
+  // Filter out known system/test addresses (add more as needed)
+  const knownBad = [
+    '0x0000000000000000000000000000000000000000',
+    '0x000000000000000000000000000000000000dead',
+    '0x0000000000000000000000000000000000000001',
+  ];
+  addresses = addresses.filter(addr => !knownBad.includes(addr.toLowerCase()));
+
   let users = [];
   for (const addr of addresses) {
     try {
